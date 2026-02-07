@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Walentynki 💘</title>
+  <style>
+    body{margin:0;font-family:system-ui;background:#fff0f5;min-height:100vh;display:grid;place-items:center;overflow:hidden}
+    .card{width:min(560px,92vw);background:white;border-radius:24px;box-shadow:0 12px 40px rgba(0,0,0,.12);padding:28px 24px;text-align:center}
+    .q{font-size:22px;font-weight:800;margin:18px 0 22px}
+    .row{position:relative;height:84px;display:flex;justify-content:center;align-items:center;gap:14px}
+    button{border:0;border-radius:999px;padding:14px 22px;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.12)}
+    #yes{background:#ff2d55;color:#fff}
+    #no{background:#111827;color:#fff;position:absolute}
+    .result{display:none;margin-top:18px}
+    .result.show{display:block}
+    .photo{margin:16px auto 0;width:min(420px,86vw);border-radius:18px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.18)}
+    .photo img{width:100%;display:block}
+    .confetti{position:fixed;inset:0;pointer-events:none}
+    .piece{position:absolute;width:10px;height:14px;border-radius:3px;animation:fall 1200ms linear forwards}
+    @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Hej, Oluś 💘</h1>
+    <div class="q">czy zostaniesz moją walentynką?</div>
+
+    <div class="row" id="row">
+      <button id="yes">TAK</button>
+      <button id="no">NIE</button>
+    </div>
+
+    <div class="result" id="result">
+      <div style="font-size:18px;font-weight:900;">🎉 FANFARY! 🎉</div>
+      <div style="margin-top:8px;">Kocham Cię ❤️</div>
+      <div class="photo"><img id="photo" alt="Zdjęcie"></div>
+    </div>
+  </div>
+
+  <div class="confetti" id="confetti"></div>
+
+  <script>
+    const PHOTO_URL = "photo.jpg"; // jeśli wrzucisz photo.jpg obok index.html
+    const yes = document.getElementById("yes");
+    const no = document.getElementById("no");
+    const row = document.getElementById("row");
+    const result = document.getElementById("result");
+    const photo = document.getElementById("photo");
+    const confetti = document.getElementById("confetti");
+
+    photo.src = PHOTO_URL;
+
+    function moveNo(){
+      const r = row.getBoundingClientRect();
+      const b = no.getBoundingClientRect();
+      const pad = 6;
+      const x = pad + Math.random() * (r.width - b.width - pad*2);
+      const y = pad + Math.random() * (r.height - b.height - pad*2);
+      no.style.left = x + "px";
+      no.style.top  = y + "px";
+    }
+
+    function playFanfare(){
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const t = ctx.currentTime;
+      [523.25,659.25,783.99,1046.5].forEach((f,i)=>{
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.type="triangle"; o.frequency.value=f;
+        g.gain.setValueAtTime(0.0001,t+i*0.06);
+        g.gain.exponentialRampToValueAtTime(0.18,t+i*0.06+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+0.45);
+        o.connect(g).connect(ctx.destination);
+        o.start(t+i*0.06); o.stop(t+0.5);
+      });
+      setTimeout(()=>ctx.close?.(),900);
+    }
+
+    function boomConfetti(n=140){
+      const w = window.innerWidth;
+      for(let i=0;i<n;i++){
+        const d=document.createElement("div");
+        d.className="piece";
+        d.style.left=(Math.random()*w)+"px";
+        d.style.top=(-20-Math.random()*80)+"px";
+        d.style.background=`hsl(${Math.random()*360},90%,60%)`;
+        d.style.animationDuration=(800+Math.random()*900)+"ms";
+        confetti.appendChild(d);
+        d.addEventListener("animationend",()=>d.remove());
+      }
+    }
+
+    no.addEventListener("mouseenter", moveNo);
+    no.addEventListener("touchstart", (e)=>{e.preventDefault(); moveNo();},{passive:false});
+
+    yes.addEventListener("click", ()=>{
+      result.classList.add("show");
+      no.style.display="none";
+      playFanfare();
+      boomConfetti();
+    });
+
+    moveNo();
+    window.addEventListener("resize", moveNo);
+  </script>
+</body>
+</html>
