@@ -5,105 +5,306 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Walentynki 💘</title>
   <style>
-    body{margin:0;font-family:system-ui;background:#fff0f5;min-height:100vh;display:grid;place-items:center;overflow:hidden}
-    .card{width:min(560px,92vw);background:white;border-radius:24px;box-shadow:0 12px 40px rgba(0,0,0,.12);padding:28px 24px;text-align:center}
-    .q{font-size:22px;font-weight:800;margin:18px 0 22px}
-    .row{position:relative;height:84px;display:flex;justify-content:center;align-items:center;gap:14px}
-    button{border:0;border-radius:999px;padding:14px 22px;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.12)}
-    #yes{background:#ff2d55;color:#fff}
-    #no{background:#111827;color:#fff;position:absolute}
-    .result{display:none;margin-top:18px}
-    .result.show{display:block}
-    .photo{margin:16px auto 0;width:min(420px,86vw);border-radius:18px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.18)}
-    .photo img{width:100%;display:block}
-    .confetti{position:fixed;inset:0;pointer-events:none}
-    .piece{position:absolute;width:10px;height:14px;border-radius:3px;animation:fall 1200ms linear forwards}
-    @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:#fff0f5;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+    }
+    .card{
+      width:min(560px,92vw);
+      background:white;
+      border-radius:24px;
+      box-shadow:0 12px 40px rgba(0,0,0,.12);
+      padding:28px 24px;
+      text-align:center;
+      position:relative;
+      z-index:2;
+    }
+    .q{
+      font-size:22px;
+      font-weight:800;
+      margin:18px 0 22px;
+    }
+    .row{
+      position:relative;
+      height:84px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:14px;
+    }
+    button{
+      border:0;
+      border-radius:999px;
+      padding:14px 22px;
+      font-size:18px;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow:0 10px 22px rgba(0,0,0,.12);
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #yes{ background:#ff2d55; color:#fff; }
+
+    /* NIE ucieka transformem – layout się nie rusza */
+    #no{
+      background:#111827;
+      color:#fff;
+      will-change: transform;
+      touch-action: none;
+    }
+
+    /* ekran po TAK */
+    .after{ display:none; }
+    .after.show{ display:block; }
+    .title{
+      font-size:22px;
+      font-weight:900;
+      margin:4px 0 14px;
+    }
+
+    .photo{
+      margin:0 auto;
+      width:min(460px,86vw);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 16px 40px rgba(0,0,0,.18);
+      background:#f3f4f6;
+    }
+    .photo img{ width:100%; display:block; }
+
+    /* ❤️ SERCA */
+    .hearts{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:1;
+    }
+    .heart{
+      position:absolute;
+      font-size:22px;
+      animation: fall linear forwards;
+      opacity:0.9;
+    }
+    @keyframes fall{
+      from{
+        transform: translateY(-40px) scale(1);
+        opacity:0.9;
+      }
+      to{
+        transform: translateY(110vh) scale(1.1);
+        opacity:0.1;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Hej, Oluś 💘</h1>
-    <div class="q">czy zostaniesz moją walentynką?</div>
 
-    <div class="row" id="row">
-      <button id="yes">TAK</button>
-      <button id="no">NIE</button>
+  <div class="card">
+    <!-- PYTANIE -->
+    <div id="askScreen">
+      <h1>Hej, Oluś 💘</h1>
+      <div class="q">czy zostaniesz moją walentynką?</div>
+
+      <div class="row" id="row">
+        <button id="yes">TAK</button>
+        <button id="no">NIE</button>
+      </div>
     </div>
 
-    <div class="result" id="result">
-      <div style="font-size:18px;font-weight:900;">🎉 FANFARY! 🎉</div>
-      <div style="margin-top:8px;">Kocham Cię ❤️</div>
+    <!-- PO TAK -->
+    <div class="after" id="afterScreen">
+      <div class="title">Bardzo się cieszę, kocham Cię! ❤️</div>
       <div class="photo"><img id="photo" alt="Zdjęcie"></div>
     </div>
   </div>
 
-  <div class="confetti" id="confetti"></div>
+  <!-- SERCA -->
+  <div class="hearts" id="hearts"></div>
+
+  <!-- MUZYKA -->
+  <audio id="loveSong" src="song.mp3" loop></audio>
 
   <script>
-    const PHOTO_URL = "photo.jpg"; // jeśli wrzucisz photo.jpg obok index.html
+    const PHOTO_URL = "photo.jpg"; // albo URL do zdjęcia
+
     const yes = document.getElementById("yes");
     const no = document.getElementById("no");
     const row = document.getElementById("row");
-    const result = document.getElementById("result");
+    const askScreen = document.getElementById("askScreen");
+    const afterScreen = document.getElementById("afterScreen");
     const photo = document.getElementById("photo");
-    const confetti = document.getElementById("confetti");
+    const hearts = document.getElementById("hearts");
+    const card = document.querySelector(".card"); // obszar ucieczki
 
     photo.src = PHOTO_URL;
 
-    function moveNo(){
-      const r = row.getBoundingClientRect();
-      const b = no.getBoundingClientRect();
-      const pad = 6;
-      const x = pad + Math.random() * (r.width - b.width - pad*2);
-      const y = pad + Math.random() * (r.height - b.height - pad*2);
-      no.style.left = x + "px";
-      no.style.top  = y + "px";
+    /* ================== SERCA ================== */
+    let heartsInterval = null;
+
+    function spawnHeart(){
+      const h = document.createElement("div");
+      h.className = "heart";
+      h.textContent = "❤️";
+
+      const size = 16 + Math.random()*18;
+      h.style.fontSize = size + "px";
+      h.style.left = Math.random()*100 + "vw";
+      h.style.animationDuration = (3 + Math.random()*3) + "s";
+      h.style.animationTimingFunction = "linear";
+
+      hearts.appendChild(h);
+      h.addEventListener("animationend", ()=>h.remove());
     }
 
-    function playFanfare(){
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const t = ctx.currentTime;
-      [523.25,659.25,783.99,1046.5].forEach((f,i)=>{
-        const o=ctx.createOscillator(), g=ctx.createGain();
-        o.type="triangle"; o.frequency.value=f;
-        g.gain.setValueAtTime(0.0001,t+i*0.06);
-        g.gain.exponentialRampToValueAtTime(0.18,t+i*0.06+0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001,t+0.45);
-        o.connect(g).connect(ctx.destination);
-        o.start(t+i*0.06); o.stop(t+0.5);
-      });
-      setTimeout(()=>ctx.close?.(),900);
+    function startHearts(){
+      if (heartsInterval) return;
+      heartsInterval = setInterval(spawnHeart, 20);
     }
 
-    function boomConfetti(n=140){
-      const w = window.innerWidth;
-      for(let i=0;i<n;i++){
-        const d=document.createElement("div");
-        d.className="piece";
-        d.style.left=(Math.random()*w)+"px";
-        d.style.top=(-20-Math.random()*80)+"px";
-        d.style.background=`hsl(${Math.random()*360},90%,60%)`;
-        d.style.animationDuration=(800+Math.random()*900)+"ms";
-        confetti.appendChild(d);
-        d.addEventListener("animationend",()=>d.remove());
+    /* ================== UCIEKAJĄCE NIE ================== */
+    let base = null, tx = 0, ty = 0, lastMoveAt = 0;
+
+    // Mniej agresywne parametry:
+    const FEAR_RADIUS = 55;      // wcześniej 120 (za szybko reagowało)
+    const THROTTLE_MS = 55;      // wolniej reaguje (mniej "teleportów")
+    const SAFE_MARGIN = 22;      // żeby nie lądował na ścianie
+    const JUMP_MIN = 130;        // mniejszy skok
+    const JUMP_RAND = 140;       // mniejsza losowość
+    const EDGE_BONUS = 18;       // lekkie "odepchnięcie" od ścian
+
+    function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
+
+    function computeBase(){
+      const r = no.getBoundingClientRect();
+      return {
+        x:(r.left+r.width/2)-tx,
+        y:(r.top+r.height/2)-ty,
+        w:r.width,
+        h:r.height
+      };
+    }
+
+    function currentCenter(){
+      if(!base) base = computeBase();
+      return { x:base.x+tx, y:base.y+ty };
+    }
+
+    function setTranslate(x,y){
+      tx=x; ty=y;
+      no.style.transform=`translate(${tx}px,${ty}px)`;
+      no.style.pointerEvents="none";
+      setTimeout(()=>no.style.pointerEvents="",110);
+    }
+
+    function moveNoAway(mx,my){
+      const now = performance.now();
+      if (now - lastMoveAt < THROTTLE_MS) return;
+      lastMoveAt = now;
+
+      if(!base) base = computeBase();
+
+      // obszar: karta, ale z marginesem żeby nie kończył na ścianie
+      const area = card.getBoundingClientRect();
+      const cur = currentCenter();
+
+      let vx = cur.x - mx, vy = cur.y - my;
+      if(Math.hypot(vx,vy) < 1){
+        const a = Math.random()*Math.PI*2;
+        vx = Math.cos(a); vy = Math.sin(a);
       }
+      const len = Math.hypot(vx,vy);
+      vx /= len; vy /= len;
+
+      const jump = JUMP_MIN + Math.random()*JUMP_RAND;
+
+      const halfW = base.w/2;
+      const halfH = base.h/2;
+
+      const minX = area.left + halfW + SAFE_MARGIN;
+      const maxX = area.right - halfW - SAFE_MARGIN;
+      const minY = area.top + halfH + SAFE_MARGIN;
+      const maxY = area.bottom - halfH - SAFE_MARGIN;
+
+      // 1) proponowany skok
+      let x = cur.x + vx*jump;
+      let y = cur.y + vy*jump;
+
+      x = clamp(x, minX, maxX);
+      y = clamp(y, minY, maxY);
+
+      // 2) jeśli wylądował blisko ściany, lekko go "odsuń" do środka (żeby nie kończył na krawędzi)
+      if (x <= minX + 1) x += EDGE_BONUS;
+      if (x >= maxX - 1) x -= EDGE_BONUS;
+      if (y <= minY + 1) y += EDGE_BONUS;
+      if (y >= maxY - 1) y -= EDGE_BONUS;
+
+      // 3) jeśli nadal za blisko kursora, wybierz najlepszy z kilku krótkich skoków (bez teleportu na ścianę)
+      let bestX = x, bestY = y;
+      let bestD = Math.hypot(x - mx, y - my);
+
+      if (bestD < FEAR_RADIUS + 10) {
+        for (let i=0;i<10;i++){
+          const a = Math.random()*Math.PI*2;
+          const xx = clamp(cur.x + Math.cos(a)*jump, minX, maxX);
+          const yy = clamp(cur.y + Math.sin(a)*jump, minY, maxY);
+          const d = Math.hypot(xx - mx, yy - my);
+          if (d > bestD) { bestD = d; bestX = xx; bestY = yy; }
+        }
+        x = bestX; y = bestY;
+      }
+
+      setTranslate(x - base.x, y - base.y);
     }
 
-    no.addEventListener("mouseenter", moveNo);
-    no.addEventListener("touchstart", (e)=>{e.preventDefault(); moveNo();},{passive:false});
+    // Strefa aktywacji: karta (ale tylko gdy kursor jest w pobliżu karty)
+    document.addEventListener("pointermove", e => {
+      const a = card.getBoundingClientRect();
+      if (e.clientX < a.left-40 || e.clientX > a.right+40 || e.clientY < a.top-40 || e.clientY > a.bottom+40) return;
 
-    yes.addEventListener("click", ()=>{
-      result.classList.add("show");
-      no.style.display="none";
-      playFanfare();
-      boomConfetti();
+      const r = no.getBoundingClientRect();
+      const d = Math.hypot((r.left + r.width/2) - e.clientX, (r.top + r.height/2) - e.clientY);
+      if (d < FEAR_RADIUS) moveNoAway(e.clientX, e.clientY);
     });
 
-    moveNo();
-    window.addEventListener("resize", moveNo);
+    no.addEventListener("pointerenter", e => moveNoAway(e.clientX, e.clientY));
+    no.addEventListener("touchstart", e => {
+      const t = e.touches[0];
+      e.preventDefault();
+      moveNoAway(t.clientX, t.clientY);
+    }, { passive:false });
+
+    // resize: przelicz bazę, zachowując transform
+    window.addEventListener("resize", ()=>{
+      if (no.style.display === "none") return;
+      const oldTx = tx, oldTy = ty;
+
+      no.style.transform = "translate(0px, 0px)";
+      tx = 0; ty = 0;
+      base = computeBase();
+
+      setTranslate(oldTx, oldTy);
+    });
+
+    /* ================== TAK ================== */
+    yes.addEventListener("click",()=>{
+      askScreen.style.display="none";
+      afterScreen.classList.add("show");
+      no.style.display="none";
+
+      const song = document.getElementById("loveSong");
+      song.volume = 0.6;
+      song.currentTime = 20;
+      song.play();
+
+      startHearts();
+    });
   </script>
 </body>
 </html>
